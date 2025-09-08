@@ -71,8 +71,7 @@ class RemoteAgentConnections:
         self._httpx_client = httpx.AsyncClient(timeout=30)
         self.agent_client = A2AClient(self._httpx_client, agent_card, url=agent_url)
         
-        # Monkeypatch the _send_request method with our custom implementation
-        # This will replace the original method with our custom implementation
+        # Replace the original method with our custom implementation
         self.agent_client._send_request = _send_request.__get__(self.agent_client)
         
         self.card = agent_card
