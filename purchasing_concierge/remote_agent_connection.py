@@ -11,6 +11,7 @@ from a2a.types import (
     TaskArtifactUpdateEvent,
     TaskStatusUpdateEvent,
 )
+from uuid import uuid4
 from dotenv import load_dotenv
 import json
 from typing import Any
@@ -19,6 +20,7 @@ from a2a.client.errors import (
     A2AClientJSONError,
     A2AClientTimeoutError,
 )
+from a2a.client.middleware import ClientCallContext
 import requests
 
 load_dotenv()
@@ -61,6 +63,7 @@ def _send_request(
     except httpx.RequestError as e:
         raise A2AClientHTTPError(503, f"Network communication error: {e}") from e
 
+
 def send_message(
     self,
     request: SendMessageRequest,
@@ -86,7 +89,9 @@ def send_message(
     if not request.id:
         request.id = str(uuid4())
 
-    response_data = self._send_request(payload, modified_kwargs)
+    response_data = self._send_request(
+        request.model_dump(mode="json", exclude_none=True), http_kwargs
+    )
     return SendMessageResponse.model_validate(response_data)
 
 
@@ -108,7 +113,5 @@ class RemoteAgentConnections:
     def get_agent(self) -> AgentCard:
         return self.card
 
-    def send_message(
-        self, message_request: SendMessageRequest
-    ) -> SendMessageResponse:
+    def send_message(self, message_request: SendMessageRequest) -> SendMessageResponse:
         return self.agent_client.send_message(message_request)
