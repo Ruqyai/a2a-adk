@@ -70,10 +70,10 @@ class RemoteAgentConnections:
         print(f"agent_url: {agent_url}")
         self._httpx_client = httpx.AsyncClient(timeout=30)
         self.agent_client = A2AClient(self._httpx_client, agent_card, url=agent_url)
-        
+
         # Replace the original method with our custom implementation
         self.agent_client._send_request = _send_request.__get__(self.agent_client)
-        
+
         self.card = agent_card
 
     def get_agent(self) -> AgentCard:
