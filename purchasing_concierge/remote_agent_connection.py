@@ -11,6 +11,7 @@ from a2a.types import (
     TaskArtifactUpdateEvent,
     TaskStatusUpdateEvent,
 )
+from uuid import uuid4
 from dotenv import load_dotenv
 import json
 from typing import Any
@@ -19,6 +20,7 @@ from a2a.client.errors import (
     A2AClientJSONError,
     A2AClientTimeoutError,
 )
+from a2a.client.middleware import ClientCallContext
 import requests
 
 load_dotenv()
@@ -27,7 +29,7 @@ TaskCallbackArg = Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent
 TaskUpdateCallback = Callable[[TaskCallbackArg, AgentCard], Task]
 
 
-async def _send_request(
+def _send_request(
     self,
     rpc_request_payload: dict[str, Any],
     http_kwargs: dict[str, Any] | None = None,
@@ -37,7 +39,7 @@ async def _send_request(
     Args:
         rpc_request_payload: JSON RPC payload for sending the request.
         http_kwargs: Optional dictionary of keyword arguments to pass to the
-            underlying httpx.post request.
+            underlying post request.
 
     Returns:
         The JSON response payload as a dictionary.
@@ -62,6 +64,37 @@ async def _send_request(
         raise A2AClientHTTPError(503, f"Network communication error: {e}") from e
 
 
+def send_message(
+    self,
+    request: SendMessageRequest,
+    *,
+    http_kwargs: dict[str, Any] | None = None,
+    context: ClientCallContext | None = None,
+) -> SendMessageResponse:
+    """Sends a non-streaming message request to the agent.
+
+    Args:
+        request: The `SendMessageRequest` object containing the message and configuration.
+        http_kwargs: Optional dictionary of keyword arguments to pass to the
+            underlying httpx.post request.
+        context: The client call context.
+
+    Returns:
+        A `SendMessageResponse` object containing the agent's response (Task or Message) or an error.
+
+    Raises:
+        A2AClientHTTPError: If an HTTP error occurs during the request.
+        A2AClientJSONError: If the response body cannot be decoded as JSON or validated.
+    """
+    if not request.id:
+        request.id = str(uuid4())
+
+    response_data = self._send_request(
+        request.model_dump(mode="json", exclude_none=True), http_kwargs
+    )
+    return SendMessageResponse.model_validate(response_data)
+
+
 class RemoteAgentConnections:
     """A class to hold the connections to the remote agents."""
 
@@ -73,13 +106,12 @@ class RemoteAgentConnections:
 
         # Replace the original method with our custom implementation
         self.agent_client._send_request = _send_request.__get__(self.agent_client)
+        self.agent_client.send_message = send_message.__get__(self.agent_client)
 
         self.card = agent_card
 
     def get_agent(self) -> AgentCard:
         return self.card
 
-    async def send_message(
-        self, message_request: SendMessageRequest
-    ) -> SendMessageResponse:
-        return await self.agent_client.send_message(message_request)
+    def send_message(self, message_request: SendMessageRequest) -> SendMessageResponse:
+        return self.agent_client.send_message(message_request)
