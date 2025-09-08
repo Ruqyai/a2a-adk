@@ -39,7 +39,7 @@ def _send_request(
     Args:
         rpc_request_payload: JSON RPC payload for sending the request.
         http_kwargs: Optional dictionary of keyword arguments to pass to the
-            underlying httpx.post request.
+            underlying post request.
 
     Returns:
         The JSON response payload as a dictionary.
