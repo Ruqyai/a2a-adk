@@ -154,7 +154,7 @@ Current active seller agent: {current_agent["active_agent"]}
             )
         return remote_agent_info
 
-    async def send_task(self, agent_name: str, task: str, tool_context: ToolContext):
+    def send_task(self, agent_name: str, task: str, tool_context: ToolContext):
         """Sends a task to remote seller agent
 
         This will send a message to the remote agent named agent_name.
@@ -200,7 +200,7 @@ Current active seller agent: {current_agent["active_agent"]}
         message_request = SendMessageRequest(
             id=message_id, params=MessageSendParams.model_validate(payload)
         )
-        send_response: SendMessageResponse = await client.send_message(
+        send_response: SendMessageResponse = client.send_message(
             message_request=message_request
         )
         print(
