@@ -105,6 +105,7 @@ class RemoteAgentConnections:
         self.agent_client = A2AClient(self._httpx_client, agent_card, url=agent_url)
 
         # Replace the original method with our custom implementation
+        # NOTE: This is a temporary workaround for issue in httpx event closed
         self.agent_client._send_request = _send_request.__get__(self.agent_client)
         self.agent_client.send_message = send_message.__get__(self.agent_client)
 
