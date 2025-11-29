@@ -18,16 +18,13 @@ import gradio as gr
 
 from typing import List, Dict, Any
 from pprint import pformat
-from vertexai import agent_engines
+from purchasing_concierge.agent import root_agent as LOCAL_AGENT
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
 USER_ID = "default_user"
-
-REMOTE_APP = agent_engines.get(os.getenv("AGENT_ENGINE_RESOURCE_NAME"))
-SESSION_ID = REMOTE_APP.create_session(user_id=USER_ID)["id"]
 
 
 async def get_response_from_agent(
@@ -43,55 +40,44 @@ async def get_response_from_agent(
     Returns:
         Text response from the backend service.
     """
-    # try:
-
     default_response = "No response from agent"
 
     responses = []
 
-    for event in REMOTE_APP.stream_query(
-        user_id=USER_ID,
-        session_id=SESSION_ID,
-        message=message,
-    ):
-        parts = event.get("content", {}).get("parts", [])
-        if parts:
-            for part in parts:
-                if part.get("function_call"):
-                    formatted_call = f"```python\n{pformat(part.get('function_call'), indent=2, width=80)}\n```"
-                    responses.append(
-                        gr.ChatMessage(
-                            role="assistant",
-                            content=f"{part.get('function_call').get('name')}:\n{formatted_call}",
-                            metadata={"title": "🛠️ Tool Call"},
-                        )
-                    )
-                elif part.get("function_response"):
-                    formatted_response = f"```python\n{pformat(part.get('function_response'), indent=2, width=80)}\n```"
-
-                    responses.append(
-                        gr.ChatMessage(
-                            role="assistant",
-                            content=formatted_response,
-                            metadata={"title": "⚡ Tool Response"},
-                        )
-                    )
-                elif part.get("text"):
-                    responses.append(
-                        gr.ChatMessage(
-                            role="assistant",
-                            content=part.get("text"),
-                        )
-                    )
-                else:
-                    formatted_unknown_parts = f"Unknown agent response part:\n\n```python\n{pformat(part, indent=2, width=80)}\n```"
-
-                    responses.append(
-                        gr.ChatMessage(
-                            role="assistant",
-                            content=formatted_unknown_parts,
-                        )
-                    )
+    for event in LOCAL_AGENT.query(message=message):
+        if "output" in event:
+            responses.append(
+                gr.ChatMessage(
+                    role="assistant",
+                    content=event["output"],
+                )
+            )
+        if "tool_code" in event and event["tool_code"]:
+            responses.append(
+                gr.ChatMessage(
+                    role="assistant",
+                    content=f"```python\n{event['tool_code']}\n```",
+                    metadata={"title": "🛠️ Tool Call"},
+                )
+            )
+        if "tool_result" in event and event["tool_result"]:
+            tool_result = event["tool_result"]
+            if isinstance(tool_result, list):
+                tool_result = "\n".join(
+                    [
+                        f"```python\n{pformat(r, indent=2, width=80)}\n```"
+                        for r in tool_result
+                    ]
+                )
+            else:
+                tool_result = f"```python\n{pformat(tool_result, indent=2, width=80)}\n```"
+            responses.append(
+                gr.ChatMessage(
+                    role="assistant",
+                    content=tool_result,
+                    metadata={"title": "⚡ Tool Response"},
+                )
+            )
 
     if not responses:
         yield default_response

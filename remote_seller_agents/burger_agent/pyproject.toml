@@ -10,10 +10,11 @@ dependencies = [
     "pydantic>=2.10.6",
     "dotenv>=0.9.9",
     "crewai>=0.118.0",
+    "litellm",
     "sse-starlette>=2.3.3",
     "jwcrypto>=1.5.6",
     "pyjwt>=2.10.1",
-    "a2a-sdk>=0.2.16",
+    "a2a-sdk[http-server]>=0.2.16",
 ]
 
 [tool.hatch.build.targets.wheel]

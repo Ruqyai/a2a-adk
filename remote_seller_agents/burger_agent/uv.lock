@@ -263,6 +263,7 @@ dependencies = [
     { name = "dotenv" },
     { name = "httpx" },
     { name = "jwcrypto" },
+    { name = "litellm" },
     { name = "pydantic" },
     { name = "pyjwt" },
     { name = "sse-starlette" },
@@ -270,12 +271,13 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "a2a-sdk", specifier = ">=0.2.16" },
+    { name = "a2a-sdk", extras = ["http-server"], specifier = ">=0.2.16" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "crewai", specifier = ">=0.118.0" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "jwcrypto", specifier = ">=1.5.6" },
+    { name = "litellm" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "sse-starlette", specifier = ">=2.3.3" },

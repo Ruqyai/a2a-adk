@@ -24,8 +24,7 @@ import os
 
 load_dotenv()
 
-litellm.vertex_project = os.getenv("GOOGLE_CLOUD_PROJECT")
-litellm.vertex_location = os.getenv("GOOGLE_CLOUD_LOCATION")
+# Using Gemini API
 
 
 class OrderItem(BaseModel):
@@ -99,7 +98,7 @@ Provided below is the available burger menu and it's related price:
 
     def invoke(self, query, sessionId) -> str:
         model = LLM(
-            model="vertex_ai/gemini-2.5-flash-lite",  # Use base model name without provider prefix
+            model="gemini/gemini-2.5-flash-lite",
         )
         burger_agent = Agent(
             role="Burger Seller Agent",
